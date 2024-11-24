@@ -16,9 +16,25 @@
     import { OrbitControls } from 'OrbitControls';
     
     
-    function STLViewer(model, elementID) {
+    function STLViewer(model, elementID, xr, yr, zr, zdepth, xt, yt, zt) {
         var elem = document.getElementById(elementID.split(".")[0])
-    
+
+        if (xr == null) {
+            xr = -Math.PI / 4
+        }
+
+        if (yr == null) {
+            yr = 0
+        }
+
+        if (zr == null) {
+            zr = 0
+        }
+
+        if (zdepth == null) {
+            zdepth = 1
+        }
+        
         var camera = new THREE.PerspectiveCamera(70, 
         elem.clientWidth/elem.clientHeight, 1, 1000);
     
@@ -49,6 +65,8 @@
                 specular: 100, 
                 shininess: 100 });
             
+            geometry.center()
+
             var mesh = new THREE.Mesh(geometry, material);
             scene.add(mesh);
     
@@ -56,14 +74,28 @@
             geometry.computeBoundingBox();
             geometry.boundingBox.getCenter(middle);
 
-            mesh.rotation.set( -Math.PI / 4, 0, 0 );
-            // mesh.geometry.applyMatrix(new THREE.Matrix4().makeTranslation( 
-            //                             -middle.x, -middle.y, -middle.z ) );
-        
+            if (xt == null) {
+                xt = -middle.x
+            }
+            if (yt == null) {
+                yt = -middle.y
+            }
+            if (zt == null) {
+                zt = -middle.z
+            }
+
+            mesh.geometry.translate( -mesh.position.x, -mesh.position.y, -mesh.position.z );
+            mesh.rotateX(xr)
+            mesh.rotateY(yr)
+            mesh.rotateZ(zr)
+
             var largestDimension = Math.max(geometry.boundingBox.max.x,
                                         geometry.boundingBox.max.y, 
                                         geometry.boundingBox.max.z)
-            camera.position.z = 40 * 1.5;
+
+            // mesh.position.set(xt, yt, zt);
+
+            camera.position.z = largestDimension * zdepth;
         
             var animate = function () {
                 requestAnimationFrame(animate);
@@ -81,7 +113,7 @@
         {{ range $.Params.stl_model }}
             {{ $path := printf "%s/%s" "models" . }}
             {{ with resources.Get $path }}
-                STLViewer("{{ .RelPermalink }}", "{{ . }}".split("/models/")[1].split(".")[0])
+                STLViewer("{{ .RelPermalink }}", "{{ . }}".split("/models/")[1].split(".")[0], {{ $.Params.xr }}, {{ $.Params.yr }}, {{ $.Params.zr }}, {{ $.Params.zdepth }}, {{ $.Params.xy }}, {{ $.Params.yt }}, {{ $.Params.zt }})
             {{ end }}
         {{ end }}
     </script>
